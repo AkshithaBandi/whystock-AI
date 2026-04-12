@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhyStock AI — Create Account</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700&family=Cabinet+Grotesk:wght@300;400;500;700&family=Fira+Code:wght@300;400&display=swap" rel="stylesheet" />
+</head>
+<body class="auth-page">
+
+  <div class="auth-bg">
+    <div class="orb orb-1" style="animation-delay:-3s"></div>
+    <div class="orb orb-2" style="animation-delay:-6s"></div>
+    <div class="orb orb-3" style="animation-delay:-1s"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <div class="ticker-wrap">
+    <div class="ticker-track">
+      <span>WIPRO +1.9%</span><span>BAJAJ -0.4%</span><span>ADANI +4.1%</span><span>NIFTY50 +0.7%</span>
+      <span>SENSEX +0.5%</span><span>NVDA +5.2%</span><span>META +2.3%</span><span>AMZN +1.0%</span>
+      <span>WIPRO +1.9%</span><span>BAJAJ -0.4%</span><span>ADANI +4.1%</span><span>NIFTY50 +0.7%</span>
+      <span>SENSEX +0.5%</span><span>NVDA +5.2%</span><span>META +2.3%</span><span>AMZN +1.0%</span>
+    </div>
+  </div>
+
+  <div class="auth-container">
+
+    <div class="auth-brand">
+      <div class="brand-mark">W</div>
+      <div>
+        <p class="brand-name">WhyStock AI</p>
+        <p class="brand-tagline">Intelligence behind every move</p>
+      </div>
+    </div>
+
+    <div class="glass-card auth-card">
+      <div class="card-shine"></div>
+
+      <div class="auth-card-header">
+        <h1 class="auth-title">Create account</h1>
+        <p class="auth-subtitle">Join thousands of traders using AI insights</p>
+      </div>
+
+      <!-- Benefits strip -->
+      <div class="benefits-strip">
+        <span class="benefit"><span class="benefit-dot"></span>AI-powered sentiment</span>
+        <span class="benefit"><span class="benefit-dot"></span>Live news analysis</span>
+        <span class="benefit"><span class="benefit-dot"></span>Price history charts</span>
+      </div>
+
+      <div id="authError" class="auth-error hidden">
+        <span class="error-icon-sm">⚠</span>
+        <span id="authErrorMsg">Something went wrong</span>
+      </div>
+
+      <form id="signupForm" class="auth-form" onsubmit="handleSignup(event)">
+
+        <div class="field-group">
+          <label class="field-label" for="signupName">Full Name</label>
+          <div class="field-wrap">
+            <span class="field-icon">◈</span>
+            <input id="signupName" type="text" class="field-input" placeholder="Your full name" autocomplete="name" />
+          </div>
+          <span class="field-error" id="nameErr"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="signupEmail">Email</label>
+          <div class="field-wrap">
+            <span class="field-icon">✉</span>
+            <input id="signupEmail" type="email" class="field-input" placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <span class="field-error" id="emailErr"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="signupPassword">Password</label>
+          <div class="field-wrap">
+            <span class="field-icon">⬤</span>
+            <input id="signupPassword" type="password" class="field-input" placeholder="Min. 6 characters" autocomplete="new-password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('signupPassword', this)">Show</button>
+          </div>
+          <span class="field-error" id="pwErr"></span>
+          <!-- Password strength -->
+          <div class="pw-strength-wrap" id="pwStrengthWrap" style="display:none">
+            <div class="pw-strength-bar"><div id="pwStrengthFill" class="pw-strength-fill"></div></div>
+            <span id="pwStrengthLabel" class="pw-strength-label"></span>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="signupConfirm">Confirm Password</label>
+          <div class="field-wrap">
+            <span class="field-icon">⬤</span>
+            <input id="signupConfirm" type="password" class="field-input" placeholder="Repeat password" autocomplete="new-password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('signupConfirm', this)">Show</button>
+          </div>
+          <span class="field-error" id="confirmErr"></span>
+        </div>
+
+        <button type="submit" class="btn-primary" id="signupBtn">
+          <span class="btn-label">Create Account</span>
+          <span class="btn-icon">→</span>
+        </button>
+
+      </form>
+
+      <p class="auth-switch">
+        Already have an account?
+        <a href="login.html" class="auth-link">Sign in</a>
+      </p>
+    </div>
+
+    <p class="auth-disclaimer">
+      Demo mode · No real data stored
+    </p>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    if (getSession()) window.location.href = 'index.html';
+
+    // Password strength meter
+    document.getElementById('signupPassword').addEventListener('input', function () {
+      const val = this.value;
+      const wrap = document.getElementById('pwStrengthWrap');
+      const fill = document.getElementById('pwStrengthFill');
+      const label = document.getElementById('pwStrengthLabel');
+
+      if (!val) { wrap.style.display = 'none'; return; }
+      wrap.style.display = 'flex';
+
+      let score = 0;
+      if (val.length >= 6)  score++;
+      if (val.length >= 10) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      const levels = [
+        { label: 'Very weak', color: '#ff2d55', pct: '20%' },
+        { label: 'Weak',      color: '#ff9500', pct: '40%' },
+        { label: 'Fair',      color: '#ffcc00', pct: '60%' },
+        { label: 'Strong',    color: '#34c759', pct: '80%' },
+        { label: 'Very strong', color: '#00e5a0', pct: '100%' },
+      ];
+      const l = levels[Math.min(score - 1, 4)] || levels[0];
+      fill.style.width = l.pct;
+      fill.style.background = l.color;
+      label.textContent = l.label;
+      label.style.color = l.color;
+    });
+
+    function handleSignup(e) {
+      e.preventDefault();
+      clearErrors();
+
+      const name    = document.getElementById('signupName').value.trim();
+      const email   = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const confirm  = document.getElementById('signupConfirm').value;
+      let valid = true;
+
+      if (!name || name.length < 2) {
+        showFieldError('nameErr', 'Enter your full name');
+        valid = false;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showFieldError('emailErr', 'Enter a valid email address');
+        valid = false;
+      }
+      if (!password || password.length < 6) {
+        showFieldError('pwErr', 'Password must be at least 6 characters');
+        valid = false;
+      }
+      if (password !== confirm) {
+        showFieldError('confirmErr', 'Passwords do not match');
+        valid = false;
+      }
+      if (!valid) return;
+
+      if (getUserByEmail(email)) {
+        showAuthError('An account with this email already exists. Sign in instead.');
+        return;
+      }
+
+      const btn = document.getElementById('signupBtn');
+      setLoading(btn, true);
+
+      setTimeout(() => {
+        const user = { name, email, password, createdAt: Date.now() };
+        saveUser(user);
+        createSession(user);
+        window.location.href = 'index.html';
+      }, 900);
+    }
+  </script>
+</body>
+</html>

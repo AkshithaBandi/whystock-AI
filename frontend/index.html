@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhyStock AI — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700&family=Cabinet+Grotesk:wght@300;400;500;700&family=Fira+Code:wght@300;400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="auth.js"></script>
+</head>
+<body class="dashboard-page">
+
+  <div class="db-bg">
+    <div class="db-orb db-orb-1"></div>
+    <div class="db-orb db-orb-2"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark sm">W</div>
+      <span class="sidebar-brand-name">WhyStock AI</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" id="nav-dashboard" href="#" onclick="navigateTo('dashboard'); return false;">
+        <span class="nav-icon">⬛</span>
+        <span>Dashboard</span>
+      </a>
+      <a class="nav-item" id="nav-watchlist" href="#" onclick="navigateTo('watchlist'); return false;">
+        <span class="nav-icon">◈</span>
+        <span>Watchlist</span>
+        <span class="nav-count-badge" id="watchlistCountBadge" style="display:none"></span>
+      </a>
+      <a class="nav-item" id="nav-portfolio" href="#" onclick="navigateTo('portfolio'); return false;">
+        <span class="nav-icon">▦</span>
+        <span>Portfolio</span>
+        <span class="nav-count-badge" id="portfolioCountBadge" style="display:none"></span>
+      </a>
+      <a class="nav-item" id="nav-alerts" href="#" onclick="navigateTo('alerts'); return false;">
+        <span class="nav-icon">◉</span>
+        <span>Alerts</span>
+        <span class="nav-count-badge" id="alertsCountBadge" style="display:none"></span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="sidebarAvatar">?</div>
+        <div class="user-info-mini">
+          <p class="user-name-mini" id="sidebarName">Loading…</p>
+          <p class="user-email-mini" id="sidebarEmail">—</p>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">
+        <span>⇤</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile header -->
+  <header class="mobile-header">
+    <div class="mobile-brand">
+      <div class="brand-mark sm">W</div>
+      <span>WhyStock AI</span>
+    </div>
+    <div class="mobile-actions">
+      <span class="user-name-mini" id="mobileUserName"></span>
+      <button class="btn-logout-sm" onclick="doLogout()">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <section id="page-dashboard">
+    <div class="topbar">
+      <div>
+        <h2 class="topbar-title">Market Intelligence</h2>
+        <p class="topbar-sub">Real-time AI-powered stock analysis</p>
+      </div>
+      <div class="topbar-right">
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          <span>Live</span>
+        </div>
+        <div class="topbar-date" id="topbarDate"></div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <section class="search-section-db">
+      <div class="glass-card search-card-db">
+        <div class="card-shine"></div>
+        <div class="search-inner">
+          <div class="search-left">
+            <p class="search-heading">Analyze Any Stock</p>
+            <p class="search-hint">Enter NSE / BSE / US symbol</p>
+          </div>
+          <div class="search-right">
+            <div class="search-input-wrap">
+              <span class="search-dollar">$</span>
+              <input id="symbolInput" type="text" class="search-input-db"
+                placeholder="e.g. TCS.NS, AAPL, TSLA"
+                autocomplete="off" spellcheck="false" />
+            </div>
+            <button class="btn-analyze-db" id="analyzeBtn" onclick="analyzeStock()">
+              <span>Analyze</span>
+              <span class="btn-icon-sm">→</span>
+            </button>
+          </div>
+        </div>
+        <div class="quick-row">
+          <span class="quick-label">Quick:</span>
+          <button class="qchip" onclick="qs('TCS.NS')">TCS.NS</button>
+          <button class="qchip" onclick="qs('RELIANCE.NS')">RELIANCE.NS</button>
+          <button class="qchip" onclick="qs('INFY.NS')">INFY.NS</button>
+          <button class="qchip" onclick="qs('AAPL')">AAPL</button>
+          <button class="qchip" onclick="qs('TSLA')">TSLA</button>
+          <button class="qchip" onclick="qs('NVDA')">NVDA</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOADING -->
+    <div id="loadingState" class="db-loading hidden">
+      <div class="db-loader">
+        <div class="loader-ring-db"></div>
+        <div>
+          <p class="loader-title">Analyzing <span id="loadingSymbol" class="loader-symbol"></span></p>
+          <p class="loader-sub">Fetching prices · Scanning news · Running AI sentiment</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div id="errorState" class="db-error hidden">
+      <div class="error-icon-lg">⚠</div>
+      <p class="error-title-lg">Stock not found</p>
+      <p class="error-sub-lg">Check the symbol and try again. Use <code>.NS</code> for NSE stocks.</p>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="resultSection" class="result-grid hidden">
+
+      <div class="result-row-top">
+
+        <!-- Stock Info -->
+        <div class="glass-card result-card stock-info-card">
+          <div class="card-shine"></div>
+          <div class="card-label-db">Stock Overview</div>
+          <div class="stock-top-row">
+            <h3 id="stockSymbol" class="stock-sym">—</h3>
+            <span id="trendBadge" class="trend-badge-db">—</span>
+          </div>
+          <div class="price-display">
+            <span class="price-curr-db">₹</span>
+            <span id="latestPrice" class="price-main">—</span>
+          </div>
+          <div class="stock-meta-grid">
+            <div class="smeta"><span class="smeta-k">Open</span><span class="smeta-v" id="openPrice">—</span></div>
+            <div class="smeta"><span class="smeta-k">High</span><span class="smeta-v" id="highPrice">—</span></div>
+            <div class="smeta"><span class="smeta-k">Low</span><span class="smeta-v" id="lowPrice">—</span></div>
+            <div class="smeta"><span class="smeta-k">Volume</span><span class="smeta-v" id="stockVolume">—</span></div>
+          </div>
+          <div class="stock-action-row">
+            <button class="btn-action-sm" id="watchlistBtn" onclick="toggleWatchlistCurrent()">
+              <span class="btn-action-icon">◈</span>
+              <span id="watchlistBtnLabel">+ Watchlist</span>
+            </button>
+            <button class="btn-action-sm btn-action-portfolio" onclick="openPortfolioModal()">
+              <span class="btn-action-icon">▦</span>
+              <span>+ Portfolio</span>
+            </button>
+            <button class="btn-action-sm btn-action-alert" onclick="openAlertModal()">
+              <span class="btn-action-icon">◉</span>
+              <span>Set Alert</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sentiment -->
+        <div class="glass-card result-card sentiment-info-card">
+          <div class="card-shine"></div>
+          <div class="card-label-db">Market Sentiment</div>
+          <div class="sentiment-layout">
+            <div class="sent-orb-wrap">
+              <div class="sent-orb" id="sentOrb"></div>
+              <p id="sentLabelMain" class="sent-label-main">—</p>
+            </div>
+            <div class="sent-details">
+              <p class="sent-score-key">Confidence Score</p>
+              <div class="score-track">
+                <div id="scoreTrackFill" class="score-track-fill"></div>
+              </div>
+              <p id="sentScore" class="sent-score-val">—</p>
+              <p class="sent-desc" id="sentDesc">Processing signals…</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Chart -->
+      <div class="glass-card result-card chart-card-db">
+        <div class="card-shine"></div>
+        <div class="chart-db-header">
+          <div class="card-label-db">Price History</div>
+          <div id="chartMeta" class="chart-meta-info"></div>
+        </div>
+        <div class="chart-wrap-db">
+          <canvas id="priceChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Explanation -->
+      <div class="glass-card result-card explanation-card-db">
+        <div class="card-shine"></div>
+        <div class="expl-card-header">
+          <div class="card-label-db">AI Explanation</div>
+          <span class="expl-powered-tag">🧠 AI Generated</span>
+        </div>
+        <div id="explanationText" class="expl-points-container"></div>
+      </div>
+
+      <!-- News -->
+      <div class="glass-card result-card news-card-db">
+        <div class="card-shine"></div>
+        <div class="card-label-db">Latest News</div>
+        <ul id="newsList" class="news-list-db"></ul>
+      </div>
+
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="empty-state">
+      <div class="empty-graphic">
+        <div class="empty-chart-mock">
+          <div class="mock-bar" style="height:40%"></div>
+          <div class="mock-bar" style="height:65%"></div>
+          <div class="mock-bar" style="height:50%"></div>
+          <div class="mock-bar" style="height:80%"></div>
+          <div class="mock-bar" style="height:60%"></div>
+          <div class="mock-bar" style="height:90%"></div>
+          <div class="mock-bar" style="height:70%"></div>
+        </div>
+      </div>
+      <p class="empty-title">Enter a stock symbol to begin</p>
+      <p class="empty-sub">AI analysis, sentiment &amp; live news in seconds</p>
+    </div>
+
+
+    </section><!-- /page-dashboard -->
+
+    <!-- ═══════════════ WATCHLIST PAGE ═══════════════ -->
+    <section id="page-watchlist" class="feature-page hidden">
+      <div class="page-header">
+        <div>
+          <h2 class="topbar-title">Watchlist</h2>
+          <p class="topbar-sub">Track your favourite symbols · click any row to analyze</p>
+        </div>
+        <div class="page-header-actions">
+          <div class="inline-add-wrap">
+            <span class="search-dollar" style="left:12px;top:50%;transform:translateY(-50%);position:absolute;">$</span>
+            <input id="wlInput" type="text" class="search-input-db" placeholder="Add symbol…" style="padding-left:28px;width:180px;" autocomplete="off" spellcheck="false" />
+          </div>
+          <button class="btn-analyze-db" onclick="addToWatchlistManual()">+ Add</button>
+        </div>
+      </div>
+
+      <div id="wlEmpty" class="feature-empty hidden">
+        <div class="fe-icon">◈</div>
+        <p class="fe-title">Your watchlist is empty</p>
+        <p class="fe-sub">Add symbols from the Dashboard or use the input above</p>
+      </div>
+
+      <div id="wlGrid" class="wl-grid"></div>
+    </section>
+
+    <!-- ═══════════════ PORTFOLIO PAGE ═══════════════ -->
+    <section id="page-portfolio" class="feature-page hidden">
+      <div class="page-header">
+        <div>
+          <h2 class="topbar-title">Portfolio</h2>
+          <p class="topbar-sub">Track holdings · live P&amp;L calculated via API</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-analyze-db" onclick="openPortfolioModal()">+ Add Holding</button>
+        </div>
+      </div>
+
+      <!-- Summary strip -->
+      <div id="pfSummary" class="pf-summary-strip hidden">
+        <div class="pf-sum-item">
+          <p class="pf-sum-key">Invested</p>
+          <p class="pf-sum-val" id="pfTotalInvested">—</p>
+        </div>
+        <div class="pf-sum-item">
+          <p class="pf-sum-key">Current Value</p>
+          <p class="pf-sum-val" id="pfCurrentValue">—</p>
+        </div>
+        <div class="pf-sum-item">
+          <p class="pf-sum-key">Total P&amp;L</p>
+          <p class="pf-sum-val" id="pfTotalPL">—</p>
+        </div>
+        <div class="pf-sum-item">
+          <p class="pf-sum-key">Return</p>
+          <p class="pf-sum-val" id="pfTotalPct">—</p>
+        </div>
+      </div>
+
+      <div id="pfEmpty" class="feature-empty hidden">
+        <div class="fe-icon">▦</div>
+        <p class="fe-title">No holdings yet</p>
+        <p class="fe-sub">Add your first stock position to start tracking P&amp;L</p>
+      </div>
+
+      <div id="pfTable" class="pf-table-wrap hidden">
+        <table class="pf-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Qty</th>
+              <th>Buy Price</th>
+              <th>Current</th>
+              <th>Invested</th>
+              <th>Value</th>
+              <th>P&amp;L</th>
+              <th>Return</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pfTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════ ALERTS PAGE ═══════════════ -->
+    <section id="page-alerts" class="feature-page hidden">
+      <div class="page-header">
+        <div>
+          <h2 class="topbar-title">Price Alerts</h2>
+          <p class="topbar-sub">Get notified when a stock hits your target price</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-analyze-db" onclick="openAlertModal()">+ New Alert</button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:12px;">
+        <div class="live-dot" style="width:8px;height:8px;flex-shrink:0;"></div>
+        <p style="font-size:0.78rem;color:var(--t-mid);font-weight:300;">
+          Alerts are checked every <strong style="color:var(--t-hi);">60 seconds</strong> while this tab is open. Browser notifications will be requested when an alert triggers.
+        </p>
+      </div>
+
+      <div id="alEmpty" class="feature-empty hidden">
+        <div class="fe-icon">◉</div>
+        <p class="fe-title">No alerts configured</p>
+        <p class="fe-sub">Set a target price and we'll notify you when it's reached</p>
+      </div>
+
+      <div id="alList" class="al-list"></div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════ PORTFOLIO MODAL ═══════════ -->
+  <div id="portfolioModal" class="modal-backdrop hidden" onclick="closeModalBackdrop(event,'portfolioModal')">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <p class="modal-title">Add to Portfolio</p>
+        <button class="modal-close" onclick="closeModal('portfolioModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label">Symbol</label>
+          <div class="field-wrap">
+            <span class="field-icon" style="font-family:var(--f-mono);">$</span>
+            <input id="pfSymInput" type="text" class="field-input" placeholder="e.g. TCS.NS" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+        <div class="modal-row-2">
+          <div class="field-group">
+            <label class="field-label">Quantity</label>
+            <div class="field-wrap">
+              <input id="pfQtyInput" type="number" class="field-input" placeholder="10" min="0.001" step="any" style="padding-left:14px;" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Buy Price (₹)</label>
+            <div class="field-wrap">
+              <input id="pfBuyInput" type="number" class="field-input" placeholder="1500.00" min="0" step="any" style="padding-left:14px;" />
+            </div>
+          </div>
+        </div>
+        <p class="modal-err hidden" id="pfModalErr">Please fill all fields correctly.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('portfolioModal')">Cancel</button>
+        <button class="btn-primary" onclick="addPortfolioHolding()" style="width:auto;padding:12px 24px;">
+          <span class="btn-label">Add Holding</span>
+          <span class="btn-icon">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ ALERT MODAL ═══════════ -->
+  <div id="alertModal" class="modal-backdrop hidden" onclick="closeModalBackdrop(event,'alertModal')">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <p class="modal-title">Set Price Alert</p>
+        <button class="modal-close" onclick="closeModal('alertModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label">Symbol</label>
+          <div class="field-wrap">
+            <span class="field-icon" style="font-family:var(--f-mono);">$</span>
+            <input id="alSymInput" type="text" class="field-input" placeholder="e.g. TCS.NS" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+        <div class="modal-row-2">
+          <div class="field-group">
+            <label class="field-label">Condition</label>
+            <div class="field-wrap">
+              <select id="alCondInput" class="field-input" style="padding-left:14px;cursor:pointer;">
+                <option value="above">Price rises above</option>
+                <option value="below">Price falls below</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Target Price (₹)</label>
+            <div class="field-wrap">
+              <input id="alPriceInput" type="number" class="field-input" placeholder="2000.00" min="0" step="any" style="padding-left:14px;" />
+            </div>
+          </div>
+        </div>
+        <p class="modal-err hidden" id="alModalErr">Please fill all fields correctly.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('alertModal')">Cancel</button>
+        <button class="btn-primary" onclick="addAlert()" style="width:auto;padding:12px 24px;">
+          <span class="btn-label">Create Alert</span>
+          <span class="btn-icon">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const session = getSession();
+    if (!session) window.location.href = 'login.html';
+    else {
+      document.getElementById('sidebarName').textContent   = session.name;
+      document.getElementById('sidebarEmail').textContent  = session.email;
+      document.getElementById('sidebarAvatar').textContent = session.name.charAt(0).toUpperCase();
+      document.getElementById('mobileUserName').textContent = session.name.split(' ')[0];
+    }
+
+    document.getElementById('topbarDate').textContent =
+      new Date().toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+
+    function doLogout() {
+      clearSession();
+      window.location.href = 'login.html';
+    }
+
+    function qs(sym) {
+      document.getElementById('symbolInput').value = sym;
+      analyzeStock();
+    }
+  </script>
+</body>
+</html>
