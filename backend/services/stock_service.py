@@ -1,23 +1,21 @@
 import yfinance as yf
 
-def get_stock_data(symbol: str):
-    stock = yf.Ticker(symbol)
-    hist = stock.history(period="7d")
+def get_stock_data(symbol):
+    try:
+        stock = yf.Ticker(symbol)
+        hist = stock.history(period="7d")
 
-    if hist.empty:
-        return None
+        if hist.empty:
+            return None
 
-    prices = hist["Close"].tolist()
-    dates = hist.index.strftime("%Y-%m-%d").tolist()
+        latest = hist.iloc[-1]
 
-    trend = "up" if prices[-1] > prices[0] else "down"
-
-    return {
-        "symbol": symbol.upper(),
-        "latest_price": prices[-1],
-        "trend": trend,
-        "chart": {
-            "dates": dates,
-            "prices": prices
+        return {
+            "symbol": symbol,
+            "price": round(float(latest["Close"]), 2),
+            "trend": "up" if latest["Close"] > hist.iloc[0]["Close"] else "down"
         }
-    }
+
+    except Exception as e:
+        print("Stock fetch error:", e)
+        return None

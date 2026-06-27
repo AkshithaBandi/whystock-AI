@@ -28,9 +28,12 @@ def analyze(symbol: str):
     stock = get_stock_data(symbol)
 
     if not stock:
-        raise HTTPException(status_code=404, detail="Stock not found")
+        return {
+            "error": "Stock data unavailable. Please try again."
+            }
 
     news = get_news(symbol)
+    print("NEWS:", news)
     sentiment = analyze_sentiment(news)
     explanation = explain_stock(stock, sentiment, news)
 
@@ -45,3 +48,4 @@ def analyze(symbol: str):
             }
         }
     }
+

@@ -1,19 +1,47 @@
 import requests
 from utils.config import NEWS_API_KEY
 
+COMPANY_MAP = {
+    "TCS.NS": "Tata Consultancy Services",
+    "INFY.NS": "Infosys",
+    "RELIANCE.NS": "Reliance Industries",
+    "HDFCBANK.NS": "HDFC Bank",
+    "ICICIBANK.NS": "ICICI Bank",
+    "AAPL": "Apple",
+    "NVDA": "NVIDIA",
+    "MSFT": "Microsoft",
+    "GOOGL": "Google",
+    "AMZN": "Amazon"
+}
+
 def get_news(symbol: str):
-    url = f"https://newsapi.org/v2/everything?q={symbol}&apiKey={NEWS_API_KEY}"
+    query = COMPANY_MAP.get(symbol, symbol.replace(".NS", ""))
 
-    response = requests.get(url)
-    data = response.json()
+    url = (
+        f"https://newsapi.org/v2/everything?"
+        f"q={query}&language=en&sortBy=publishedAt&pageSize=5"
+        f"&apiKey={NEWS_API_KEY}"
+    )
 
-    articles = []
+    try:
+        response = requests.get(url, timeout=15)
+        data = response.json()
 
-    for item in data.get("articles", [])[:5]:
-        articles.append({
-            "title": item["title"],
-            "url": item["url"],
-            "description": item["description"]
-        })
+        print("NEWS QUERY:", query)
+        print("TOTAL RESULTS:", data.get("totalResults", 0))
 
-    return articles
+        articles = []
+
+        for item in data.get("articles", [])[:5]:
+            articles.append({
+                "title": item.get("title", ""),
+                "url": item.get("url", ""),
+                "description": item.get("description", "")
+            })
+
+        print("ARTICLES FOUND:", len(articles))
+        return articles
+
+    except Exception as e:
+        print("NEWS ERROR:", e)
+        return []

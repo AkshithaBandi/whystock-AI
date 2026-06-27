@@ -8,21 +8,26 @@ def explain_stock(stock, sentiment, news):
 
     symbol = stock.get("symbol", "Unknown")
 
-    # ✅ Cache check
-    if symbol in cache:
-        print("⚡ Using cached result")
-        return cache[symbol]
+    # ✅ Better cache key
+    cache_key = f"{symbol}_{sentiment.get('label')}"
 
-    # 🔥 FIX: Always prepare news_text (even if empty)
+    if cache_key in cache:
+        print("⚡ Using cached result")
+        return cache[cache_key]
+
+    # ✅ Prepare news
     if not news:
         print("⚠ No news → using minimal prompt")
         news_text = "No recent news available."
     else:
         news_text = "\n".join(
-            [f"- {n.get('title', '')}: {n.get('description', '')}" for n in news[:5]]
+            [
+                f"- {n.get('title', '')}: {n.get('description', '')}"
+                for n in news[:5]
+            ]
         )
 
-    # 🚀 Prompt
+    # 🚀 Improved Prompt
     prompt = f"""
 You are a professional stock market analyst.
 
@@ -33,12 +38,20 @@ Sentiment: {sentiment.get('label')}
 Recent News:
 {news_text}
 
-Explain:
-1. Why the stock moved
-2. Key reasons (news, sentiment, market)
-3. Short future outlook
+Instructions:
+- Use only company-related news.
+- Ignore unrelated articles.
+- Explain why the stock moved.
+- Mention the most relevant news items.
+- Explain the impact on investor sentiment.
+- Provide a short future outlook.
+- Return only 3 concise bullet points.
 
-Keep it simple in 3–5 lines.
+Response format:
+
+• Reason for movement
+• Impact on sentiment
+• Future outlook
 """
 
     try:
@@ -55,23 +68,19 @@ Keep it simple in 3–5 lines.
         )
 
         print("✅ STATUS:", response.status_code)
-        print("📦 RAW RESPONSE:", response.text)
 
         if response.status_code != 200:
-            raise Exception("Ollama request failed")
+            raise Exception(f"Ollama request failed ({response.status_code})")
 
         data = response.json()
-        print("📊 PARSED JSON:", data)
 
-        result = data.get("response")
+        result = data.get("response", "").strip()
 
-        if not result or result.strip() == "":
+        if not result:
             raise Exception("Empty response from Ollama")
 
-        result = result.strip()
-
-        # ✅ Cache result
-        cache[symbol] = result
+        # ✅ Save to cache
+        cache[cache_key] = result
 
         print("✅ AI RESPONSE GENERATED")
 
@@ -82,8 +91,22 @@ Keep it simple in 3–5 lines.
 
         # 🔁 Fallback
         if sentiment.get("label") == "positive":
-            return f"{symbol} is rising due to positive sentiment and favorable developments."
+            return (
+                f"• {symbol} is showing positive momentum.\n"
+                f"• Investor sentiment remains optimistic.\n"
+                f"• Short-term outlook appears favorable."
+            )
+
         elif sentiment.get("label") == "negative":
-            return f"{symbol} is declining due to negative sentiment and market pressure."
+            return (
+                f"• {symbol} is experiencing downward pressure.\n"
+                f"• Investor sentiment remains cautious.\n"
+                f"• Short-term volatility may continue."
+            )
+
         else:
-            return f"{symbol} is showing stable movement influenced by mixed market signals."
+            return (
+                f"• {symbol} is moving within a neutral trend.\n"
+                f"• Market sentiment is mixed.\n"
+                f"• Investors may wait for stronger signals."
+            )
