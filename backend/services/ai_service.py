@@ -1,53 +1,50 @@
-import requests
+from groq import Groq
+from utils.config import GROQ_API_KEY
 
-# 🔥 Cache
+# Cache
 cache = {}
 
+client = Groq(api_key=GROQ_API_KEY)
+
 def explain_stock(stock, sentiment, news):
+
     print("🔥 AI SERVICE FUNCTION CALLED")
 
     symbol = stock.get("symbol", "Unknown")
 
-    # ✅ Better cache key
     cache_key = f"{symbol}_{sentiment.get('label')}"
 
     if cache_key in cache:
         print("⚡ Using cached result")
         return cache[cache_key]
 
-    # ✅ Prepare news
     if not news:
-        print("⚠ No news → using minimal prompt")
-        news_text = "No recent news available."
+        news_text = "No recent company news available."
     else:
-        news_text = "\n".join(
-            [
-                f"- {n.get('title', '')}: {n.get('description', '')}"
-                for n in news[:5]
-            ]
-        )
+        news_text = "\n".join([
+            f"- {n.get('title', '')}: {n.get('description', '')}"
+            for n in news[:5]
+        ])
 
-    # 🚀 Improved Prompt
     prompt = f"""
 You are a professional stock market analyst.
 
 Stock: {symbol}
-Trend: {stock.get('trend')}
+Current Trend: {stock.get('trend')}
 Sentiment: {sentiment.get('label')}
 
 Recent News:
 {news_text}
 
 Instructions:
-- Use only company-related news.
+- Use only relevant company news.
 - Ignore unrelated articles.
 - Explain why the stock moved.
-- Mention the most relevant news items.
-- Explain the impact on investor sentiment.
-- Provide a short future outlook.
-- Return only 3 concise bullet points.
+- Explain investor sentiment.
+- Give a short outlook.
+- Keep the response concise.
 
-Response format:
+Return exactly:
 
 • Reason for movement
 • Impact on sentiment
@@ -55,41 +52,31 @@ Response format:
 """
 
     try:
-        print("📡 Sending request to Ollama...")
 
-        response = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "mistral",
-                "prompt": prompt,
-                "stream": False
-            },
-            timeout=120
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.4,
+            max_tokens=250
         )
 
-        print("✅ STATUS:", response.status_code)
+        result = completion.choices[0].message.content.strip()
 
-        if response.status_code != 200:
-            raise Exception(f"Ollama request failed ({response.status_code})")
-
-        data = response.json()
-
-        result = data.get("response", "").strip()
-
-        if not result:
-            raise Exception("Empty response from Ollama")
-
-        # ✅ Save to cache
         cache[cache_key] = result
 
-        print("✅ AI RESPONSE GENERATED")
+        print("✅ GROQ RESPONSE GENERATED")
 
         return result
 
     except Exception as e:
-        print("❌ Ollama error:", e)
 
-        # 🔁 Fallback
+        print("❌ GROQ ERROR:", e)
+
         if sentiment.get("label") == "positive":
             return (
                 f"• {symbol} is showing positive momentum.\n"
