@@ -132,7 +132,6 @@ whystock-ai/
 │
 ├── screenshots/
 │
-├── README.md
 └── .gitignore
 ```
 
@@ -234,7 +233,8 @@ http://127.0.0.1:5500
 
 
 ## Watchlist & Portfolio
-<img width="953" height="438" alt="Screenshot 2026-07-06 141802" src="https://github.com/user-attachments/assets/9cff5db5-725e-4ed9-a880-527820078306" />
+<img width="955" height="429" alt="Screenshot 2026-07-06 134402" src="https://github.com/user-attachments/assets/6e4c9c7d-b883-4374-a336-f09e9263959a" />
+
 <img width="947" height="430" alt="Screenshot 2026-07-06 134437" src="https://github.com/user-attachments/assets/f4f8af39-3eb1-4ead-abf7-7129fabeb8e2" />
 
 
