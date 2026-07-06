@@ -228,7 +228,7 @@ http://127.0.0.1:5500
 ## AI Insights
 
 <img width="953" height="438" alt="Screenshot 2026-07-06 141802" src="https://github.com/user-attachments/assets/060ceaa0-5ac8-4e48-b7b0-3f1cfa37d831" />
-<img width="953" height="438" alt="Screenshot 2026-07-06 141802" src="https://github.com/user-attachments/assets/4f284e7a-77c7-4d60-b999-25da288fde39" />
+<img width="936" height="441" alt="Screenshot 2026-07-06 141818" src="https://github.com/user-attachments/assets/1bbe7008-6303-4cb6-9311-05ce2df0d485" />
 
 
 
