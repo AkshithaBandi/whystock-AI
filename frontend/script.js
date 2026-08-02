@@ -3,7 +3,10 @@
    Dashboard logic: API calls, chart, result rendering
    ===================================================== */
 
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE =
+    window.location.hostname === "localhost"
+        ? "http://127.0.0.1:8000"
+        : "https://whystock-ai.onrender.com/";
 let priceChart = null;
 
 // ── DOM refs ─────────────────────────────────────────
