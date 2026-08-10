@@ -154,6 +154,31 @@ The platform helps investors understand **why a stock is moving** by analyzing m
 ```
 
 ---
+# 📸 Screenshots
+
+## 🔐 Authentication
+
+<img width="938" height="433" alt="Screenshot 2026-07-06 134322" src="https://github.com/user-attachments/assets/2c904e77-4e12-465e-b3ce-94d131fe8811" />
+
+
+## 📊 Dashboard
+
+<img width="952" height="434" alt="Screenshot 2026-07-06 134341" src="https://github.com/user-attachments/assets/40e1cf86-6a2d-4617-a31b-3e43faee7be8" />
+
+
+## 🤖 AI Insights
+
+<img width="937" height="426" alt="Screenshot 2026-07-06 134954" src="https://github.com/user-attachments/assets/08398f1d-6acf-4487-bd22-be961d789d84" />
+
+
+## ⭐ Watchlist & Portfolio
+
+<img width="955" height="429" alt="Screenshot 2026-07-06 134402" src="https://github.com/user-attachments/assets/1b999caf-5713-489a-a0c2-19fa3871a32d" />
+<img width="947" height="430" alt="Screenshot 2026-07-06 134437" src="https://github.com/user-attachments/assets/a04dc89b-3dfe-4f6a-83c2-fd2e90fc19af" />
+
+## 🔔 Price Alerts
+
+<img width="944" height="439" alt="Screenshot 2026-07-06 134453" src="https://github.com/user-attachments/assets/3275e29b-70a8-4ca6-b6b8-00ae391748b5" />
 
 # 🛠️ Tech Stack
 
