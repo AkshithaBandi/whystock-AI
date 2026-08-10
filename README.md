@@ -5,6 +5,12 @@ WhyStock AI is an AI-powered stock movement analysis platform that combines real
 The platform helps investors understand why a stock is moving by analyzing market trends, news sentiment, and recent company-related news, then generating concise AI-powered explanations.
 
 ---
+# 🚀 Live Demo
+### Frontend
+🔗 https://whystock-5e07jffal-akdha.vercel.app/
+
+### Backend API
+🔗https://whystock-ai.onrender.com/
 
 ## 🚀 Features
 
@@ -54,87 +60,111 @@ The platform helps investors understand why a stock is moving by analyzing marke
 
 # 🏗️ System Architecture
 
-User Input
-↓
-Frontend (HTML, CSS, JavaScript)
-↓
-FastAPI Backend
-↓
-├── Yahoo Finance (Stock Data)
-├── NewsAPI (News)
-├── Sentiment Analysis
-└── Groq API (Llama 3.3 70B)
-↓
-AI Generated Insights
-↓
-Dashboard
-
----
-
+```text
+                         ┌──────────────────┐
+                         │      User        │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │   Frontend      │
+                         │ HTML/CSS/JS      │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │ JWT Authentication│
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │ FastAPI Backend  │
+                         └────────┬─────────┘
+                                  │
+              ┌───────────────────┼───────────────────┐
+              │                   │                   │
+              ▼                   ▼                   ▼
+      ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+      │ PostgreSQL   │    │ Yahoo Finance│    │   NewsAPI    │
+      │              │    │              │    │              │
+      │ • Users      │    │ Stock Data   │    │ Financial    │
+      │ • Watchlist  │    │              │    │ News         │
+      │ • Portfolio  │    └──────────────┘    └──────┬───────┘
+      │ • Alerts     │                               │
+      └──────────────┘                               ▼
+                                             ┌────────────────┐
+                                             │   Sentiment    │
+                                             │   Analysis     │
+                                             └───────┬────────┘
+                                                     │
+                                                     ▼
+                                             ┌────────────────┐
+                                             │ Groq API       │
+                                             │ Llama 3.3 70B  │
+                                             └───────┬────────┘
+                                                     │
+                                                     ▼
+                                             ┌────────────────┐
+                                             │ AI-Generated   │
+                                             │ Insights       │
+                                             └───────┬────────┘
+                                                     │
+                                                     ▼
+                                             ┌────────────────┐
+                                             │   Dashboard    │
+                                             └────────────────┘
 # 🛠️ Tech Stack
 
 ## Frontend
+
 - HTML5
 - CSS3
 - JavaScript (ES6+)
 - Chart.js
 
 ## Backend
-- FastAPI
+
 - Python
+- FastAPI
 - REST APIs
+- Uvicorn
+
+## Authentication & Security
+
+- JWT (JSON Web Tokens)
+- PyJWT
+- Argon2
+- pwdlib
 
 ## AI & NLP
+
 - Groq API
 - Llama 3.3 70B
 - Sentiment Analysis
 
 ## Data Sources
+
 - Yahoo Finance (yfinance)
 - NewsAPI
 
-## Storage
-- LocalStorage
+## Database & Storage
 
-## Development Tools
+- PostgreSQL
+- SQLAlchemy ORM
+
+## Development & Deployment
+
 - Git
 - GitHub
 - VS Code
+- Render
 
----
+## Architecture
 
-# 📂 Project Structure
-
-```text
-whystock-ai/
-│
-├── backend/
-│   ├── services/
-│   │   ├── ai_service.py
-│   │   ├── news_service.py
-│   │   ├── sentiment_service.py
-│   │   └── stock_service.py
-│   │
-│   ├── utils/
-│   │   └── config.py
-│   │
-│   ├── main.py
-│   ├── requirements.txt
-│   └── .env
-│
-├── frontend/
-│   ├── index.html
-│   ├── login.html
-│   ├── signup.html
-│   ├── style.css
-│   ├── auth.js
-│   └── script.js
-│
-├── screenshots/
-│
-└── .gitignore
-```
-
+- RESTful API Architecture
+- User-specific data isolation
+- JWT-based authentication
+- PostgreSQL-backed persistent storage
 ---
 
 # ⚙️ Installation
@@ -170,12 +200,13 @@ pip install -r backend/requirements.txt
 
 # 🔑 Environment Variables
 
-Create a `.env` file inside the backend directory:
+Create a `.env` file inside the `backend` directory:
 
 ```env
+DATABASE_URL=your_postgresql_database_url
 NEWS_API_KEY=your_newsapi_key
 GROQ_API_KEY=your_groq_api_key
-```
+JWT_SECRET_KEY=your_secret_key
 
 ---
 
@@ -241,14 +272,15 @@ http://127.0.0.1:5500
 
 # 📈 Future Improvements
 
-- Supabase/PostgreSQL Integration
-- JWT Authentication
-- Cloud Deployment
-- Real-Time WebSocket Updates
-- Advanced Portfolio Analytics
-- Multi-LLM Support
-- Technical Indicator Analysis
-
+- 🔄 Real-Time WebSocket Updates
+- 📊 Advanced Portfolio Analytics
+- 🤖 Multi-LLM Support
+- 📈 Advanced Technical Indicator Analysis
+- 🔔 Smart AI-Based Price Alerts
+- 📰 Improved Financial News & Sentiment Analysis
+- 📱 Mobile-Responsive / Progressive Web App
+- ⚡ Performance Optimization & Caching
+- 📈 Backtesting and Strategy Evaluation
 ---
 
 # 👩‍💻 Author
