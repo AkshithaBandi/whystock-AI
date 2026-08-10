@@ -7,6 +7,7 @@ const API_BASE =
     window.location.hostname === "localhost"
         ? "http://127.0.0.1:8000"
         : "https://whystock-ai.onrender.com";
+
 let priceChart = null;
 
 // ── DOM refs ─────────────────────────────────────────
@@ -561,7 +562,9 @@ function navigateTo(page) {
 
 async function getWatchlist() {
   try {
-    const response = await fetch(`${API_BASE}/watchlist`);
+    const response = await fetch(`${API_BASE}/watchlist`, {
+    headers: getAuthHeaders()
+});
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -588,12 +591,12 @@ async function addToWatchlist(symbol) {
 
   try {
     const response = await fetch(
-      `${API_BASE}/watchlist/${encodeURIComponent(sym)}`,
-      {
-        method: 'POST'
-      }
-    );
-
+    `${API_BASE}/watchlist/${encodeURIComponent(sym)}`,
+    {
+        method: 'POST',
+        headers: getAuthHeaders()
+    }
+);
     const data = await response.json();
 
     if (!response.ok) {
@@ -624,11 +627,12 @@ async function removeFromWatchlist(symbol) {
 
   try {
     const response = await fetch(
-      `${API_BASE}/watchlist/${encodeURIComponent(sym)}`,
-      {
-        method: 'DELETE'
-      }
-    );
+    `${API_BASE}/watchlist/${encodeURIComponent(sym)}`,
+    {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    }
+);
 
     const data = await response.json();
 
@@ -853,8 +857,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function getPortfolio() {
   try {
-    const response = await fetch(`${API_BASE}/portfolio`);
-
+    const response = await fetch(`${API_BASE}/portfolio`, {
+    headers: getAuthHeaders()
+});
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -898,12 +903,12 @@ async function addPortfolioHolding() {
     });
 
     const response = await fetch(
-      `${API_BASE}/portfolio?${params.toString()}`,
-      {
-        method: 'POST'
-      }
-    );
-
+    `${API_BASE}/portfolio?${params.toString()}`,
+    {
+        method: 'POST',
+        headers: getAuthHeaders()
+    }
+);
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
 
@@ -940,11 +945,12 @@ async function addPortfolioHolding() {
 async function removePortfolioHolding(id) {
   try {
     const response = await fetch(
-      `${API_BASE}/portfolio/${encodeURIComponent(id)}`,
-      {
-        method: 'DELETE'
-      }
-    );
+    `${API_BASE}/portfolio/${encodeURIComponent(id)}`,
+    {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    }
+);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -970,78 +976,200 @@ async function removePortfolioHolding(id) {
 }
 
 async function renderPortfolio() {
-  const portfolio = await getPortfolio();
-  const empty   = document.getElementById('pfEmpty');
-  const tableWrap = document.getElementById('pfTable');
-  const tbody   = document.getElementById('pfTbody');
-  const summary = document.getElementById('pfSummary');
-  if (!empty || !tableWrap || !tbody) return;
+    const portfolio = await getPortfolio();
 
-  if (!portfolio.length) {
-    empty.classList.remove('hidden');
-    tableWrap.classList.add('hidden');
-    summary.classList.add('hidden');
-    return;
-  }
+    const empty = document.getElementById('pfEmpty');
+    const tableWrap = document.getElementById('pfTable');
+    const tbody = document.getElementById('pfTbody');
+    const summary = document.getElementById('pfSummary');
 
-  empty.classList.add('hidden');
-  tableWrap.classList.remove('hidden');
-  summary.classList.remove('hidden');
+    if (!empty || !tableWrap || !tbody) return;
 
-  // Render rows with loading state first
-  tbody.innerHTML = portfolio.map((h, i) => `
-    <tr id="pfRow-${i}">
-      <td><span class="pf-sym-cell">${esc(h.sym)}</span></td>
-      <td class="pf-num">${h.qty}</td>
-      <td class="pf-num">₹${fmtPrice(h.buy)}</td>
-      <td class="pf-num pf-curr" id="pfCurr-${i}"><span class="pf-loading">…</span></td>
-      <td class="pf-num">₹${fmtPrice(h.qty * h.buy)}</td>
-      <td class="pf-num pf-val" id="pfVal-${i}">—</td>
-      <td class="pf-num pf-pl" id="pfPL-${i}">—</td>
-      <td class="pf-num pf-ret" id="pfRet-${i}">—</td>
-      <td><button class="pf-del-btn" onclick="removePortfolioHolding(${h.id})">✕</button></td>
-    </tr>`).join('');
-
-  // Fetch current prices
-  let totalInvested = 0, totalCurrent = 0;
-  const fetches = portfolio.map(async (h, i) => {
-    totalInvested += h.qty * h.buy;
-    try {
-      const res = await fetch(`${API_BASE}/analyze/${encodeURIComponent(h.sym)}`);
-      if (!res.ok) throw new Error();
-      const json = await res.json();
-      const stock = json.data?.stock || json.data?.stock_info || {};
-      const curr  = stock.current_price ?? stock.latest_price ?? stock.close ?? stock.price ?? null;
-      if (curr == null) throw new Error();
-
-      const value = h.qty * curr;
-      const pl    = value - h.qty * h.buy;
-      const ret   = ((pl / (h.qty * h.buy)) * 100).toFixed(2);
-      const up    = pl >= 0;
-      totalCurrent += value;
-
-      setCell(`pfCurr-${i}`, `₹${fmtPrice(curr)}`);
-      setCell(`pfVal-${i}`,  `₹${fmtPrice(value)}`);
-      setCell(`pfPL-${i}`,   `${up ? '+' : ''}₹${fmtPrice(pl)}`, up ? 'var(--green)' : 'var(--red)');
-      setCell(`pfRet-${i}`,  `${up ? '+' : ''}${ret}%`,           up ? 'var(--green)' : 'var(--red)');
-    } catch {
-      setCell(`pfCurr-${i}`, 'N/A', 'var(--t-lo)');
-      setCell(`pfPL-${i}`,   '—',   'var(--t-lo)');
-      setCell(`pfRet-${i}`,  '—',   'var(--t-lo)');
+    if (!portfolio.length) {
+        empty.classList.remove('hidden');
+        tableWrap.classList.add('hidden');
+        summary?.classList.add('hidden');
+        return;
     }
-  });
 
-  await Promise.all(fetches);
+    empty.classList.add('hidden');
+    tableWrap.classList.remove('hidden');
+    summary?.classList.remove('hidden');
 
-  // Update summary
-  const totalPL  = totalCurrent - totalInvested;
-  const totalRet = totalInvested ? ((totalPL / totalInvested) * 100).toFixed(2) : 0;
-  const up = totalPL >= 0;
+    // Render rows
+    tbody.innerHTML = portfolio.map((h, i) => `
+        <tr id="pfRow-${i}">
+            <td>
+                <span class="pf-sym-cell">
+                    ${esc(h.symbol)}
+                </span>
+            </td>
 
-  setText('pfTotalInvested', `₹${fmtPrice(totalInvested)}`);
-  setText('pfCurrentValue',  `₹${fmtPrice(totalCurrent)}`);
-  setCell('pfTotalPL',  `${up ? '+' : ''}₹${fmtPrice(totalPL)}`,  up ? 'var(--green)' : 'var(--red)');
-  setCell('pfTotalPct', `${up ? '+' : ''}${totalRet}%`,            up ? 'var(--green)' : 'var(--red)');
+            <td class="pf-num">
+                ${h.quantity}
+            </td>
+
+            <td class="pf-num">
+                ₹${fmtPrice(h.buy_price)}
+            </td>
+
+            <td class="pf-num pf-curr" id="pfCurr-${i}">
+                <span class="pf-loading">…</span>
+            </td>
+
+            <td class="pf-num">
+                ₹${fmtPrice(h.quantity * h.buy_price)}
+            </td>
+
+            <td class="pf-num pf-val" id="pfVal-${i}">
+                —
+            </td>
+
+            <td class="pf-num pf-pl" id="pfPL-${i}">
+                —
+            </td>
+
+            <td class="pf-num pf-ret" id="pfRet-${i}">
+                —
+            </td>
+
+            <td>
+                <button
+                    class="pf-del-btn"
+                    onclick="removePortfolioHolding(${h.id})"
+                >
+                    ✕
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    let totalInvested = 0;
+    let totalCurrent = 0;
+
+    const fetches = portfolio.map(async (h, i) => {
+
+        const invested = h.quantity * h.buy_price;
+        totalInvested += invested;
+
+        try {
+            const res = await fetch(
+                `${API_BASE}/analyze/${encodeURIComponent(h.symbol)}`
+            );
+
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+
+            const json = await res.json();
+
+            const stock =
+                json.data?.stock ||
+                json.data?.stock_info ||
+                {};
+
+            const curr =
+                stock.current_price ??
+                stock.latest_price ??
+                stock.close ??
+                stock.price ??
+                null;
+
+            if (curr == null) {
+                throw new Error('Current price unavailable');
+            }
+
+            const value = h.quantity * curr;
+            const pl = value - invested;
+
+            const ret = invested
+                ? ((pl / invested) * 100).toFixed(2)
+                : '0.00';
+
+            const up = pl >= 0;
+
+            totalCurrent += value;
+
+            setCell(
+                `pfCurr-${i}`,
+                `₹${fmtPrice(curr)}`
+            );
+
+            setCell(
+                `pfVal-${i}`,
+                `₹${fmtPrice(value)}`
+            );
+
+            setCell(
+                `pfPL-${i}`,
+                `${up ? '+' : ''}₹${fmtPrice(pl)}`,
+                up ? 'var(--green)' : 'var(--red)'
+            );
+
+            setCell(
+                `pfRet-${i}`,
+                `${up ? '+' : ''}${ret}%`,
+                up ? 'var(--green)' : 'var(--red)'
+            );
+
+        } catch (error) {
+
+            console.error(
+                `[WhyStock] Failed to fetch price for ${h.symbol}:`,
+                error
+            );
+
+            setCell(
+                `pfCurr-${i}`,
+                'N/A',
+                'var(--t-lo)'
+            );
+
+            setCell(
+                `pfPL-${i}`,
+                '—',
+                'var(--t-lo)'
+            );
+
+            setCell(
+                `pfRet-${i}`,
+                '—',
+                'var(--t-lo)'
+            );
+        }
+    });
+
+    await Promise.all(fetches);
+
+    const totalPL = totalCurrent - totalInvested;
+
+    const totalRet = totalInvested
+        ? ((totalPL / totalInvested) * 100).toFixed(2)
+        : '0.00';
+
+    const up = totalPL >= 0;
+
+    setText(
+        'pfTotalInvested',
+        `₹${fmtPrice(totalInvested)}`
+    );
+
+    setText(
+        'pfCurrentValue',
+        `₹${fmtPrice(totalCurrent)}`
+    );
+
+    setCell(
+        'pfTotalPL',
+        `${up ? '+' : ''}₹${fmtPrice(totalPL)}`,
+        up ? 'var(--green)' : 'var(--red)'
+    );
+
+    setCell(
+        'pfTotalPct',
+        `${up ? '+' : ''}${totalRet}%`,
+        up ? 'var(--green)' : 'var(--red)'
+    );
 }
 
 function setCell(id, text, color) {
@@ -1062,8 +1190,9 @@ function setText(id, text) {
 
 async function getAlerts() {
   try {
-    const response = await fetch(`${API_BASE}/alerts`);
-
+    const response = await fetch(`${API_BASE}/alerts`, {
+    headers: getAuthHeaders()
+});
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -1116,11 +1245,12 @@ async function addAlert() {
     });
 
     const response = await fetch(
-      `${API_BASE}/alerts?${params.toString()}`,
-      {
-        method: 'POST'
-      }
-    );
+    `${API_BASE}/alerts?${params.toString()}`,
+    {
+        method: 'POST',
+        headers: getAuthHeaders()
+    }
+);
 
     if (!response.ok) {
       const errorData = await response
@@ -1168,11 +1298,12 @@ async function addAlert() {
 async function removeAlert(id) {
   try {
     const response = await fetch(
-      `${API_BASE}/alerts/${encodeURIComponent(id)}`,
-      {
-        method: 'DELETE'
-      }
-    );
+    `${API_BASE}/alerts/${encodeURIComponent(id)}`,
+    {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    }
+);
 
     if (!response.ok) {
       const errorData = await response
@@ -1203,40 +1334,108 @@ async function removeAlert(id) {
 }
 
 async function renderAlerts() {
-  const alerts  = await getAlerts();
-  const listEl  = document.getElementById('alList');
-  const emptyEl = document.getElementById('alEmpty');
-  if (!listEl || !emptyEl) return;
+    const alerts = await getAlerts();
 
-  if (!alerts.length) {
-    emptyEl.classList.remove('hidden');
+    const listEl = document.getElementById('alList');
+    const emptyEl = document.getElementById('alEmpty');
+
+    if (!listEl || !emptyEl) return;
+
+    if (!alerts.length) {
+        emptyEl.classList.remove('hidden');
+        listEl.innerHTML = '';
+        return;
+    }
+
+    emptyEl.classList.add('hidden');
     listEl.innerHTML = '';
-    return;
-  }
-  emptyEl.classList.add('hidden');
-  listEl.innerHTML = '';
 
-  alerts.forEach(a => {
-    const card = document.createElement('div');
-    card.className = `glass-card al-card ${a.triggered ? 'al-triggered' : ''}`;
-    const condLabel = a.cond === 'above' ? 'rises above' : 'falls below';
-    const statusLabel = a.triggered ? '✓ Triggered' : '⏳ Watching';
-    const statusColor = a.triggered ? 'var(--green)' : 'var(--t-mid)';
+    alerts.forEach(a => {
 
-    card.innerHTML = `
-      <div class="al-card-left">
-        <div class="al-sym">${esc(a.sym)}</div>
-        <div class="al-condition">When price <strong>${condLabel}</strong> ₹${fmtPrice(a.price)}</div>
-        <div class="al-created">Added ${new Date(a.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
-      </div>
-      <div class="al-card-right">
-        <span class="al-status" style="color:${statusColor}">${statusLabel}</span>
-        <span class="al-curr-price" id="alCurr-${a.id}">fetching…</span>
-        <button class="pf-del-btn" onclick="removeAlert(${a.id})">✕</button>
-      </div>`;
-    listEl.appendChild(card);
-    fetchAlertCurrentPrice(a.sym, a.id);
-  });
+        const card = document.createElement('div');
+
+        card.className =
+            `glass-card al-card ${a.triggered ? 'al-triggered' : ''}`;
+
+        const condLabel =
+            a.condition === 'above'
+                ? 'rises above'
+                : 'falls below';
+
+        const statusLabel =
+            a.triggered
+                ? '✓ Triggered'
+                : '⏳ Watching';
+
+        const statusColor =
+            a.triggered
+                ? 'var(--green)'
+                : 'var(--t-mid)';
+
+        const createdDate = a.created_at
+            ? new Date(
+                Number(a.created_at)
+              ).toLocaleDateString(
+                'en-IN',
+                {
+                    day: 'numeric',
+                    month: 'short'
+                }
+              )
+            : '—';
+
+        card.innerHTML = `
+            <div class="al-card-left">
+
+                <div class="al-sym">
+                    ${esc(a.symbol)}
+                </div>
+
+                <div class="al-condition">
+                    When price
+                    <strong>${condLabel}</strong>
+                    ₹${fmtPrice(a.target_price)}
+                </div>
+
+                <div class="al-created">
+                    Added ${createdDate}
+                </div>
+
+            </div>
+
+            <div class="al-card-right">
+
+                <span
+                    class="al-status"
+                    style="color:${statusColor}"
+                >
+                    ${statusLabel}
+                </span>
+
+                <span
+                    class="al-curr-price"
+                    id="alCurr-${a.id}"
+                >
+                    fetching…
+                </span>
+
+                <button
+                    class="pf-del-btn"
+                    onclick="removeAlert(${a.id})"
+                >
+                    ✕
+                </button>
+
+            </div>
+        `;
+
+        listEl.appendChild(card);
+
+        fetchAlertCurrentPrice(
+            a.symbol,
+            a.id
+        );
+    });
 }
 
 async function fetchAlertCurrentPrice(sym, id) {
@@ -1272,6 +1471,7 @@ async function checkAlerts() {
     if (alert.triggered) continue;
 
     try {
+      // Get latest stock data
       const res = await fetch(
         `${API_BASE}/analyze/${encodeURIComponent(alert.sym)}`
       );
@@ -1293,53 +1493,66 @@ async function checkAlerts() {
 
       if (price == null) continue;
 
+
+      // Check alert condition
       const hit =
-        alert.cond === 'above'
+        alert.cond === "above"
           ? price >= alert.price
           : price <= alert.price;
 
-      if (hit) {
-        try {
-          const response = await fetch(
-            `${API_BASE}/alerts/${encodeURIComponent(alert.id)}/trigger`,
-            {
-              method: 'PATCH'
-            }
-          );
 
-          if (!response.ok) {
-            console.error(
-              `[WhyStock] Failed to trigger alert ${alert.id}`
-            );
+      if (!hit) continue;
 
-            continue;
-          }
 
-          alert.triggered = true;
-          changed = true;
+      // Tell backend that the alert was triggered
+      const response = await fetch(
+    `${API_BASE}/alerts/${encodeURIComponent(alert.id)}/trigger`,
+    {
+        method: "PATCH",
+        headers: getAuthHeaders()
+    }
+);
 
-          fireAlert(alert, price);
 
-        } catch (error) {
-          console.error(
-            '[WhyStock] Failed to trigger alert:',
-            error
-          );
-        }
+      if (!response.ok) {
+        console.error(
+          `[WhyStock] Failed to trigger alert ${alert.id}`
+        );
+
+        continue;
       }
 
+
+      // Update local copy
+      alert.triggered = true;
+
+      changed = true;
+
+
+      // Show notification
+      fireAlert(
+        alert,
+        price
+      );
+
     } catch (error) {
+
       console.error(
-        `[WhyStock] Failed to check alert ${alert.id}:`,
+        "[WhyStock] Failed to check alert:",
         error
       );
+
     }
   }
 
-  if (changed && currentPage === 'alerts') {
+
+  // Refresh alert data if anything changed
+  if (changed) {
     await renderAlerts();
+    await updateNavBadges();
   }
 }
+
 
 function fireAlert(alert, currentPrice) {
   const condLabel = alert.cond === 'above' ? 'risen above' : 'fallen below';
