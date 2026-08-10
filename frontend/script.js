@@ -6,7 +6,7 @@
 const API_BASE =
     window.location.hostname === "localhost"
         ? "http://127.0.0.1:8000"
-        : "https://whystock-ai.onrender.com/";
+        : "https://whystock-ai.onrender.com";
 let priceChart = null;
 
 // ── DOM refs ─────────────────────────────────────────
@@ -559,9 +559,21 @@ function navigateTo(page) {
 // WATCHLIST
 // ═══════════════════════════════════════════════════════
 
-function getWatchlist() {
-  try { return JSON.parse(localStorage.getItem(SK.WATCHLIST) || '[]'); }
-  catch { return []; }
+async function getWatchlist() {
+  try {
+    const response = await fetch(`${API_BASE}/watchlist`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return data.watchlist || [];
+  } catch (error) {
+    console.error("[WhyStock] Failed to load watchlist:", error);
+    return [];
+  }
 }
 
 function saveWatchlist(list) {
@@ -569,47 +581,119 @@ function saveWatchlist(list) {
   updateNavBadges();
 }
 
-function addToWatchlist(symbol) {
+async function addToWatchlist(symbol) {
   const sym = symbol.trim().toUpperCase();
+
   if (!sym) return false;
-  const list = getWatchlist();
-  if (list.includes(sym)) return false;
-  list.push(sym);
-  saveWatchlist(list);
-  return true;
+
+  try {
+    const response = await fetch(
+      `${API_BASE}/watchlist/${encodeURIComponent(sym)}`,
+      {
+        method: 'POST'
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || `HTTP ${response.status}`);
+    }
+
+    await updateNavBadges();
+
+    return data.success === true;
+
+  } catch (error) {
+    console.error(
+      "[WhyStock] Failed to add watchlist:",
+      error
+    );
+
+    showToast(
+      "Failed to add stock to watchlist",
+      "error"
+    );
+
+    return false;
+  }
 }
 
-function removeFromWatchlist(symbol) {
-  const list = getWatchlist().filter(s => s !== symbol);
-  saveWatchlist(list);
-  renderWatchlist();
-  updateWatchlistBtn(symbol);
+async function removeFromWatchlist(symbol) {
+  const sym = symbol.trim().toUpperCase();
+
+  try {
+    const response = await fetch(
+      `${API_BASE}/watchlist/${encodeURIComponent(sym)}`,
+      {
+        method: 'DELETE'
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || `HTTP ${response.status}`);
+    }
+
+    await updateNavBadges();
+    await renderWatchlist();
+    await updateWatchlistBtn(sym);
+
+    return data.success === true;
+
+  } catch (error) {
+    console.error(
+      "[WhyStock] Failed to remove watchlist:",
+      error
+    );
+
+    showToast(
+      "Failed to remove stock from watchlist",
+      "error"
+    );
+
+    return false;
+  }
 }
 
-function isInWatchlist(symbol) {
-  return getWatchlist().includes(symbol);
+
+async function isInWatchlist(symbol) {
+  const list = await getWatchlist();
+
+  return list.includes(
+    symbol.trim().toUpperCase()
+  );
 }
 
 // Button on stock card
-function toggleWatchlistCurrent() {
+async function toggleWatchlistCurrent() {
   if (!currentSymbol) return;
-  if (isInWatchlist(currentSymbol)) {
-    removeFromWatchlist(currentSymbol);
-    showToast(`${currentSymbol} removed from watchlist`, 'info');
-  } else {
-    addToWatchlist(currentSymbol);
-    showToast(`${currentSymbol} added to watchlist ◈`, 'success');
-  }
-  updateWatchlistBtn(currentSymbol);
-}
 
-function updateWatchlistBtn(symbol) {
-  const btn   = document.getElementById('watchlistBtn');
-  const label = document.getElementById('watchlistBtnLabel');
-  if (!btn || !label) return;
-  const inList = isInWatchlist(symbol);
-  label.textContent = inList ? '✓ In Watchlist' : '+ Watchlist';
-  btn.classList.toggle('btn-action-active', inList);
+  const inList = await isInWatchlist(currentSymbol);
+
+  if (inList) {
+    const removed = await removeFromWatchlist(currentSymbol);
+
+    if (removed) {
+      showToast(
+        `${currentSymbol} removed from watchlist`,
+        "info"
+      );
+    }
+
+  } else {
+    const added = await addToWatchlist(currentSymbol);
+
+    if (added) {
+      showToast(
+        `${currentSymbol} added to watchlist ◈`,
+        "success"
+      );
+    }
+  }
+
+  await updateWatchlistBtn(currentSymbol);
 }
 
 // Manual add from watchlist page input
@@ -628,10 +712,12 @@ function addToWatchlistManual() {
   }
 }
 
-function renderWatchlist() {
-  const list    = getWatchlist();
-  const grid    = document.getElementById('wlGrid');
-  const empty   = document.getElementById('wlEmpty');
+async function renderWatchlist() {
+  const list = await getWatchlist();
+
+  const grid = document.getElementById('wlGrid');
+  const empty = document.getElementById('wlEmpty');
+
   if (!grid || !empty) return;
 
   if (!list.length) {
@@ -639,25 +725,54 @@ function renderWatchlist() {
     grid.innerHTML = '';
     return;
   }
+
   empty.classList.add('hidden');
   grid.innerHTML = '';
 
   list.forEach(sym => {
     const card = document.createElement('div');
+
     card.className = 'glass-card wl-card';
+
     card.innerHTML = `
       <div class="wl-card-top">
         <div class="wl-sym">${esc(sym)}</div>
-        <button class="wl-remove-btn" onclick="removeFromWatchlist('${esc(sym)}')" title="Remove">✕</button>
+
+        <button
+          class="wl-remove-btn"
+          onclick="removeFromWatchlist('${esc(sym)}')"
+          title="Remove"
+        >
+          ✕
+        </button>
       </div>
+
       <div class="wl-price-row">
-        <span class="wl-price" id="wlPrice-${esc(sym)}">—</span>
-        <span class="wl-change" id="wlChange-${esc(sym)}">fetching…</span>
+        <span
+          class="wl-price"
+          id="wlPrice-${esc(sym)}"
+        >
+          —
+        </span>
+
+        <span
+          class="wl-change"
+          id="wlChange-${esc(sym)}"
+        >
+          fetching…
+        </span>
       </div>
-      <button class="btn-analyze-db wl-analyze-btn" onclick="wlAnalyze('${esc(sym)}')">
+
+      <button
+        class="btn-analyze-db wl-analyze-btn"
+        onclick="wlAnalyze('${esc(sym)}')"
+      >
         Analyze <span>→</span>
-      </button>`;
+      </button>
+    `;
+
     grid.appendChild(card);
+
     fetchWatchlistPrice(sym);
   });
 }
@@ -1034,14 +1149,16 @@ document.addEventListener('keydown', e => {
 // NAV BADGES  (live counts)
 // ═══════════════════════════════════════════════════════
 
-function updateNavBadges() {
-  const wl = getWatchlist().length;
+async function updateNavBadges() {
+  const list = await getWatchlist();
+
+  const wl = list.length;
   const pf = getPortfolio().length;
   const al = getAlerts().filter(a => !a.triggered).length;
 
   setBadge('watchlistCountBadge', wl);
   setBadge('portfolioCountBadge', pf);
-  setBadge('alertsCountBadge',    al);
+  setBadge('alertsCountBadge', al);
 }
 
 function setBadge(id, count) {
