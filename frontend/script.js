@@ -666,6 +666,24 @@ async function isInWatchlist(symbol) {
   );
 }
 
+
+// ── Update Watchlist Button ─────────────────────────
+async function updateWatchlistBtn(symbol) {
+  const btn = document.getElementById('watchlistBtn');
+  const label = document.getElementById('watchlistBtnLabel');
+
+  if (!btn || !label) return;
+
+  const inList = await isInWatchlist(symbol);
+
+  if (inList) {
+    label.textContent = '✓ In Watchlist';
+    btn.classList.add('btn-action-active');
+  } else {
+    label.textContent = '+ Watchlist';
+    btn.classList.remove('btn-action-active');
+  }
+}
 // Button on stock card
 async function toggleWatchlistCurrent() {
   if (!currentSymbol) return;
@@ -697,17 +715,26 @@ async function toggleWatchlistCurrent() {
 }
 
 // Manual add from watchlist page input
-function addToWatchlistManual() {
+async function addToWatchlistManual() {
   const input = document.getElementById('wlInput');
+
   if (!input) return;
+
   const sym = input.value.trim().toUpperCase();
-  if (!sym) { shakeElement(input); return; }
-  if (addToWatchlist(sym)) {
+
+  if (!sym) {
+    shakeElement(input);
+    return;
+  }
+
+  const added = await addToWatchlist(sym);
+
+  if (added) {
     input.value = '';
-    renderWatchlist();
+    await renderWatchlist();
     showToast(`${sym} added to watchlist`, 'success');
   } else {
-    showToast(`${sym} is already in your watchlist`, 'info');
+    showToast(`${sym} could not be added to watchlist`, 'error');
     shakeElement(input);
   }
 }
@@ -824,15 +851,24 @@ document.addEventListener('DOMContentLoaded', () => {
 // PORTFOLIO
 // ═══════════════════════════════════════════════════════
 
-function getPortfolio() {
-  try { return JSON.parse(localStorage.getItem(SK.PORTFOLIO) || '[]'); }
-  catch { return []; }
+async function getPortfolio() {
+  try {
+    const response = await fetch(`${API_BASE}/portfolio`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return data.portfolio || [];
+
+  } catch (error) {
+    console.error("[WhyStock] Failed to load portfolio:", error);
+    return [];
+  }
 }
 
-function savePortfolio(list) {
-  localStorage.setItem(SK.PORTFOLIO, JSON.stringify(list));
-  updateNavBadges();
-}
 
 function openPortfolioModal() {
   // Pre-fill symbol if we're on a stock result
@@ -842,7 +878,7 @@ function openPortfolioModal() {
   document.getElementById('portfolioModal')?.classList.remove('hidden');
 }
 
-function addPortfolioHolding() {
+async function addPortfolioHolding() {
   const sym = document.getElementById('pfSymInput')?.value.trim().toUpperCase();
   const qty = parseFloat(document.getElementById('pfQtyInput')?.value);
   const buy = parseFloat(document.getElementById('pfBuyInput')?.value);
@@ -853,31 +889,88 @@ function addPortfolioHolding() {
     return;
   }
 
-  const portfolio = getPortfolio();
-  portfolio.push({ sym, qty, buy, addedAt: Date.now() });
-  savePortfolio(portfolio);
-  closeModal('portfolioModal');
+  try {
+    const params = new URLSearchParams({
+      symbol: sym,
+      quantity: qty,
+      buy_price: buy,
+      added_at: Date.now()
+    });
 
-  // Clear inputs
-  ['pfSymInput','pfQtyInput','pfBuyInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+    const response = await fetch(
+      `${API_BASE}/portfolio?${params.toString()}`,
+      {
+        method: 'POST'
+      }
+    );
 
-  showToast(`${sym} added to portfolio ▦`, 'success');
-  if (currentPage === 'portfolio') renderPortfolio();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      throw new Error(
+        errorData.detail || `HTTP ${response.status}`
+      );
+    }
+
+    closeModal('portfolioModal');
+
+    ['pfSymInput', 'pfQtyInput', 'pfBuyInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
+    showToast(`${sym} added to portfolio ▦`, 'success');
+
+    await updateNavBadges();
+
+    if (currentPage === 'portfolio') {
+      await renderPortfolio();
+    }
+
+  } catch (error) {
+    console.error(
+      '[WhyStock] Failed to add portfolio:',
+      error
+    );
+
+    showToast('Failed to add stock to portfolio', 'error');
+  }
 }
 
-function removePortfolioHolding(idx) {
-  const portfolio = getPortfolio();
-  portfolio.splice(idx, 1);
-  savePortfolio(portfolio);
-  renderPortfolio();
-  showToast('Holding removed', 'info');
+async function removePortfolioHolding(id) {
+  try {
+    const response = await fetch(
+      `${API_BASE}/portfolio/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE'
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      throw new Error(
+        errorData.detail || `HTTP ${response.status}`
+      );
+    }
+
+    await renderPortfolio();
+    await updateNavBadges();
+
+    showToast('Holding removed', 'info');
+
+  } catch (error) {
+    console.error(
+      '[WhyStock] Failed to remove portfolio:',
+      error
+    );
+
+    showToast('Failed to remove holding', 'error');
+  }
 }
 
 async function renderPortfolio() {
-  const portfolio = getPortfolio();
+  const portfolio = await getPortfolio();
   const empty   = document.getElementById('pfEmpty');
   const tableWrap = document.getElementById('pfTable');
   const tbody   = document.getElementById('pfTbody');
@@ -906,7 +999,7 @@ async function renderPortfolio() {
       <td class="pf-num pf-val" id="pfVal-${i}">—</td>
       <td class="pf-num pf-pl" id="pfPL-${i}">—</td>
       <td class="pf-num pf-ret" id="pfRet-${i}">—</td>
-      <td><button class="pf-del-btn" onclick="removePortfolioHolding(${i})">✕</button></td>
+      <td><button class="pf-del-btn" onclick="removePortfolioHolding(${h.id})">✕</button></td>
     </tr>`).join('');
 
   // Fetch current prices
@@ -967,14 +1060,26 @@ function setText(id, text) {
 // ALERTS
 // ═══════════════════════════════════════════════════════
 
-function getAlerts() {
-  try { return JSON.parse(localStorage.getItem(SK.ALERTS) || '[]'); }
-  catch { return []; }
-}
+async function getAlerts() {
+  try {
+    const response = await fetch(`${API_BASE}/alerts`);
 
-function saveAlerts(list) {
-  localStorage.setItem(SK.ALERTS, JSON.stringify(list));
-  updateNavBadges();
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return data.alerts || [];
+
+  } catch (error) {
+    console.error(
+      '[WhyStock] Failed to load alerts:',
+      error
+    );
+
+    return [];
+  }
 }
 
 function openAlertModal() {
@@ -984,10 +1089,17 @@ function openAlertModal() {
   document.getElementById('alertModal')?.classList.remove('hidden');
 }
 
-function addAlert() {
-  const sym   = document.getElementById('alSymInput')?.value.trim().toUpperCase();
-  const cond  = document.getElementById('alCondInput')?.value;
-  const price = parseFloat(document.getElementById('alPriceInput')?.value);
+async function addAlert() {
+  const sym = document.getElementById('alSymInput')?.value
+    .trim()
+    .toUpperCase();
+
+  const cond = document.getElementById('alCondInput')?.value;
+
+  const price = parseFloat(
+    document.getElementById('alPriceInput')?.value
+  );
+
   const errEl = document.getElementById('alModalErr');
 
   if (!sym || isNaN(price) || price <= 0) {
@@ -995,30 +1107,103 @@ function addAlert() {
     return;
   }
 
-  const alerts = getAlerts();
-  alerts.push({ sym, cond, price, triggered: false, createdAt: Date.now(), id: Date.now() });
-  saveAlerts(alerts);
-  closeModal('alertModal');
+  try {
+    const params = new URLSearchParams({
+      symbol: sym,
+      condition: cond,
+      target_price: price,
+      created_at: Date.now()
+    });
 
-  ['alSymInput','alPriceInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+    const response = await fetch(
+      `${API_BASE}/alerts?${params.toString()}`,
+      {
+        method: 'POST'
+      }
+    );
 
-  showToast(`Alert set for ${sym} ${cond} ₹${price}`, 'success');
-  requestNotificationPermission();
-  if (currentPage === 'alerts') renderAlerts();
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({}));
+
+      throw new Error(
+        errorData.detail || `HTTP ${response.status}`
+      );
+    }
+
+    closeModal('alertModal');
+
+    ['alSymInput', 'alPriceInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
+    showToast(
+      `Alert set for ${sym} ${cond} ₹${price}`,
+      'success'
+    );
+
+    requestNotificationPermission();
+
+    await updateNavBadges();
+
+    if (currentPage === 'alerts') {
+      await renderAlerts();
+    }
+
+  } catch (error) {
+    console.error(
+      '[WhyStock] Failed to add alert:',
+      error
+    );
+
+    showToast(
+      'Failed to create alert',
+      'error'
+    );
+  }
 }
 
-function removeAlert(id) {
-  const alerts = getAlerts().filter(a => a.id !== id);
-  saveAlerts(alerts);
-  renderAlerts();
-  showToast('Alert removed', 'info');
+async function removeAlert(id) {
+  try {
+    const response = await fetch(
+      `${API_BASE}/alerts/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE'
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({}));
+
+      throw new Error(
+        errorData.detail || `HTTP ${response.status}`
+      );
+    }
+
+    await renderAlerts();
+    await updateNavBadges();
+
+    showToast('Alert removed', 'info');
+
+  } catch (error) {
+    console.error(
+      '[WhyStock] Failed to remove alert:',
+      error
+    );
+
+    showToast(
+      'Failed to remove alert',
+      'error'
+    );
+  }
 }
 
-function renderAlerts() {
-  const alerts  = getAlerts();
+async function renderAlerts() {
+  const alerts  = await getAlerts();
   const listEl  = document.getElementById('alList');
   const emptyEl = document.getElementById('alEmpty');
   if (!listEl || !emptyEl) return;
@@ -1077,33 +1262,82 @@ function startAlertPolling() {
 }
 
 async function checkAlerts() {
-  const alerts = getAlerts();
+  const alerts = await getAlerts();
+
   if (!alerts.length) return;
 
   let changed = false;
+
   for (const alert of alerts) {
     if (alert.triggered) continue;
+
     try {
-      const res = await fetch(`${API_BASE}/analyze/${encodeURIComponent(alert.sym)}`);
+      const res = await fetch(
+        `${API_BASE}/analyze/${encodeURIComponent(alert.sym)}`
+      );
+
       if (!res.ok) continue;
+
       const json = await res.json();
-      const stock = json.data?.stock || json.data?.stock_info || {};
-      const price = stock.current_price ?? stock.latest_price ?? stock.close ?? stock.price;
+
+      const stock =
+        json.data?.stock ||
+        json.data?.stock_info ||
+        {};
+
+      const price =
+        stock.current_price ??
+        stock.latest_price ??
+        stock.close ??
+        stock.price;
+
       if (price == null) continue;
 
-      const hit = alert.cond === 'above' ? price >= alert.price
-                                         : price <= alert.price;
+      const hit =
+        alert.cond === 'above'
+          ? price >= alert.price
+          : price <= alert.price;
+
       if (hit) {
-        alert.triggered = true;
-        changed = true;
-        fireAlert(alert, price);
+        try {
+          const response = await fetch(
+            `${API_BASE}/alerts/${encodeURIComponent(alert.id)}/trigger`,
+            {
+              method: 'PATCH'
+            }
+          );
+
+          if (!response.ok) {
+            console.error(
+              `[WhyStock] Failed to trigger alert ${alert.id}`
+            );
+
+            continue;
+          }
+
+          alert.triggered = true;
+          changed = true;
+
+          fireAlert(alert, price);
+
+        } catch (error) {
+          console.error(
+            '[WhyStock] Failed to trigger alert:',
+            error
+          );
+        }
       }
-    } catch { /* ignore */ }
+
+    } catch (error) {
+      console.error(
+        `[WhyStock] Failed to check alert ${alert.id}:`,
+        error
+      );
+    }
   }
 
-  if (changed) {
-    saveAlerts(alerts);
-    if (currentPage === 'alerts') renderAlerts();
+  if (changed && currentPage === 'alerts') {
+    await renderAlerts();
   }
 }
 
@@ -1151,10 +1385,12 @@ document.addEventListener('keydown', e => {
 
 async function updateNavBadges() {
   const list = await getWatchlist();
+  const portfolio = await getPortfolio();
+  const alerts = await getAlerts();
 
   const wl = list.length;
-  const pf = getPortfolio().length;
-  const al = getAlerts().filter(a => !a.triggered).length;
+  const pf = portfolio.length;
+  const al = alerts.filter(a => !a.triggered).length;
 
   setBadge('watchlistCountBadge', wl);
   setBadge('portfolioCountBadge', pf);
