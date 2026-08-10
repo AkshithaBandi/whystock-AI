@@ -113,6 +113,8 @@ The platform helps investors understand why a stock is moving by analyzing marke
                                              ┌────────────────┐
                                              │   Dashboard    │
                                              └────────────────┘
+'''
+
 # 🛠️ Tech Stack
 
 ## Frontend
