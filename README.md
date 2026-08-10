@@ -2,29 +2,39 @@
 
 WhyStock AI is an AI-powered stock movement analysis platform that combines real-time stock market data, financial news, sentiment analysis, and Large Language Models (LLMs) to generate explainable stock insights.
 
-The platform helps investors understand why a stock is moving by analyzing market trends, news sentiment, and recent company-related news, then generating concise AI-powered explanations.
+The platform helps investors understand **why a stock is moving** by analyzing market trends, news sentiment, and recent company-related news, then generating concise AI-powered explanations.
 
 ---
+
 # 🚀 Live Demo
+
 ### Frontend
+
 🔗 https://whystock-5e07jffal-akdha.vercel.app/
 
 ### Backend API
-🔗https://whystock-ai.onrender.com/
 
-## 🚀 Features
+🔗 https://whystock-ai.onrender.com/
 
-### 📊 Real-Time Stock Analysis
-- Fetches live stock prices using Yahoo Finance.
+---
+
+# 🚀 Features
+
+## 📊 Real-Time Stock Analysis
+
+- Fetches stock prices using Yahoo Finance.
 - Supports both Indian (NSE) and US stock symbols.
 - Displays current stock price and trend direction.
+- Provides historical price data for visualization.
 
-### 📰 Financial News Aggregation
+## 📰 Financial News Aggregation
+
 - Retrieves company-related news using NewsAPI.
-- Filters relevant news articles.
+- Filters relevant financial news articles.
 - Provides direct links to original news sources.
 
-### 😊 Sentiment Analysis
+## 😊 Sentiment Analysis
+
 - Analyzes recent news headlines and descriptions.
 - Calculates sentiment scores.
 - Classifies sentiment as:
@@ -32,29 +42,57 @@ The platform helps investors understand why a stock is moving by analyzing marke
   - Negative
   - Neutral
 
-### 🤖 AI-Powered Stock Insights
+## 🤖 AI-Powered Stock Insights
+
 - Uses Groq API with Llama 3.3 70B.
 - Generates explainable stock movement summaries.
 - Combines:
-  - Market trend
+  - Market trends
   - News sentiment
   - Recent company news
 
-### 📈 Interactive Dashboard
-- Responsive modern UI.
+## 📈 Interactive Dashboard
+
+- Modern responsive user interface.
 - Interactive stock charts.
 - AI explanation panel.
 - Real-time analysis results.
+- Stock price visualization.
 
-### ⭐ Watchlist & Portfolio
-- Manage favorite stocks.
-- Track portfolio holdings.
-- Save user preferences locally.
+## 🔐 User Authentication
 
-### 🔔 Price Alerts
-- Set target prices.
+- User registration and login.
+- JWT-based authentication.
+- Secure password hashing using Argon2.
+- User-specific data isolation.
+- Protected API endpoints.
+
+## ⭐ Watchlist
+
+- Add stocks to a personal watchlist.
+- Remove stocks from the watchlist.
+- Watchlist data is stored per user.
+- Persistent PostgreSQL storage.
+
+## 💼 Portfolio
+
+- Add portfolio holdings.
+- Track quantity and purchase price.
+- Calculate current portfolio value.
+- Calculate profit/loss.
+- Calculate portfolio returns.
+- Portfolio data is isolated per user.
+
+## 🔔 Price Alerts
+
+- Create price-based alerts.
+- Supports:
+  - Price rises above target
+  - Price falls below target
+- Automatically checks stock prices.
 - Browser notifications when targets are reached.
-- Automatic stock monitoring.
+- Alert status tracking.
+- Alerts are stored per user.
 
 ---
 
@@ -67,8 +105,8 @@ The platform helps investors understand why a stock is moving by analyzing marke
                                   │
                                   ▼
                          ┌──────────────────┐
-                         │   Frontend      │
-                         │ HTML/CSS/JS      │
+                         │    Frontend      │
+                         │  HTML/CSS/JS     │
                          └────────┬─────────┘
                                   │
                                   ▼
@@ -78,7 +116,7 @@ The platform helps investors understand why a stock is moving by analyzing marke
                                   │
                                   ▼
                          ┌──────────────────┐
-                         │ FastAPI Backend  │
+                         │  FastAPI Backend │
                          └────────┬─────────┘
                                   │
               ┌───────────────────┼───────────────────┐
@@ -94,27 +132,29 @@ The platform helps investors understand why a stock is moving by analyzing marke
       └──────────────┘                               ▼
                                              ┌────────────────┐
                                              │   Sentiment    │
-                                             │   Analysis     │
+                                             │    Analysis    │
                                              └───────┬────────┘
                                                      │
                                                      ▼
                                              ┌────────────────┐
-                                             │ Groq API       │
+                                             │   Groq API     │
                                              │ Llama 3.3 70B  │
                                              └───────┬────────┘
                                                      │
                                                      ▼
                                              ┌────────────────┐
-                                             │ AI-Generated   │
-                                             │ Insights       │
+                                             │  AI-Generated  │
+                                             │    Insights    │
                                              └───────┬────────┘
                                                      │
                                                      ▼
                                              ┌────────────────┐
                                              │   Dashboard    │
                                              └────────────────┘
-'''
+```
+
 ---
+
 # 🛠️ Tech Stack
 
 ## Frontend
@@ -159,6 +199,7 @@ The platform helps investors understand why a stock is moving by analyzing marke
 - Git
 - GitHub
 - VS Code
+- Vercel
 - Render
 
 ## Architecture
@@ -167,24 +208,25 @@ The platform helps investors understand why a stock is moving by analyzing marke
 - User-specific data isolation
 - JWT-based authentication
 - PostgreSQL-backed persistent storage
+
 ---
 
 # ⚙️ Installation
 
-## Clone Repository
+## 1. Clone Repository
 
 ```bash
 git clone https://github.com/AkshithaBandi/whystock-AI.git
 cd whystock-AI
 ```
 
-## Create Virtual Environment
+## 2. Create Virtual Environment
 
 ```bash
 python -m venv venv
 ```
 
-## Activate Environment
+## 3. Activate Virtual Environment
 
 ### Windows
 
@@ -192,7 +234,13 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-## Install Dependencies
+### macOS / Linux
+
+```bash
+source venv/bin/activate
+```
+
+## 4. Install Dependencies
 
 ```bash
 pip install -r backend/requirements.txt
@@ -209,13 +257,32 @@ DATABASE_URL=your_postgresql_database_url
 NEWS_API_KEY=your_newsapi_key
 GROQ_API_KEY=your_groq_api_key
 JWT_SECRET_KEY=your_secret_key
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL database connection URL |
+| `NEWS_API_KEY` | NewsAPI authentication key |
+| `GROQ_API_KEY` | Groq API authentication key |
+| `JWT_SECRET_KEY` | Secret key used to sign JWT authentication tokens |
+
+> ⚠️ Never commit your `.env` file or expose API keys, database credentials, or JWT secrets publicly.
 
 ---
 
 # ▶️ Run Backend
 
+Navigate to the backend directory:
+
 ```bash
 cd backend
+```
+
+Start the FastAPI server:
+
+```bash
 uvicorn main:app --reload
 ```
 
@@ -225,7 +292,7 @@ Backend:
 http://127.0.0.1:8000
 ```
 
-API Docs:
+API Documentation:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -235,8 +302,15 @@ http://127.0.0.1:8000/docs
 
 # 🌐 Run Frontend
 
+Open a new terminal and navigate to the frontend:
+
 ```bash
 cd frontend
+```
+
+Start the frontend server:
+
+```bash
 python -m http.server 5500
 ```
 
@@ -248,29 +322,164 @@ http://127.0.0.1:5500
 
 ---
 
+# 🔑 Authentication Flow
+
+WhyStock AI uses JWT-based authentication to ensure that each user's data remains isolated.
+
+```text
+User
+  ↓
+Sign Up / Login
+  ↓
+FastAPI Authentication API
+  ↓
+Password Verification
+  ↓
+JWT Token Generated
+  ↓
+Frontend Stores Session
+  ↓
+JWT Token Sent With API Requests
+  ↓
+Backend Identifies User
+  ↓
+User-Specific Data Returned
+```
+
+Each authenticated user has their own:
+
+- Watchlist
+- Portfolio
+- Price Alerts
+
+---
+
+# 🗄️ Database Structure
+
+WhyStock AI uses PostgreSQL with SQLAlchemy ORM.
+
+```text
+Users
+│
+├── id
+├── name
+├── email
+├── password_hash
+└── created_at
+      │
+      ├───────────────┐
+      │               │
+      ▼               ▼
+Watchlist          Portfolio
+│                  │
+├── id             ├── id
+├── user_id        ├── user_id
+└── symbol         ├── symbol
+                   ├── quantity
+                   ├── buy_price
+                   └── added_at
+
+      │
+      ▼
+    Alerts
+      │
+      ├── id
+      ├── user_id
+      ├── symbol
+      ├── condition
+      ├── target_price
+      ├── triggered
+      └── created_at
+```
+
+---
+
+# 📊 Application Workflow
+
+```text
+User enters stock symbol
+        ↓
+Frontend sends request
+        ↓
+FastAPI Backend
+        ↓
+Yahoo Finance
+        ↓
+Stock price + historical data
+        ↓
+NewsAPI
+        ↓
+Financial news
+        ↓
+Sentiment Analysis
+        ↓
+News sentiment
+        ↓
+Groq API
+        ↓
+Llama 3.3 70B
+        ↓
+AI explanation
+        ↓
+Frontend Dashboard
+        ↓
+User receives stock movement explanation
+```
+
+---
+
 # 📸 Screenshots
 
-### Authentication Page
-<img width="938" height="433" alt="Screenshot 2026-07-06 134322" src="https://github.com/user-attachments/assets/37833545-f250-4e31-82c1-0492e34e68e3" />
+## 🔐 Authentication Page
 
+Add your login/signup screenshot here.
 
-## Dashboard
+## 📊 Dashboard
 
-<img width="952" height="434" alt="Screenshot 2026-07-06 134341" src="https://github.com/user-attachments/assets/7a8fdc92-75ba-4e25-a2c4-cdb3850a6bc2" />
+Add your main dashboard screenshot here.
 
-## AI Insights
+## 🤖 AI Insights
 
-<img width="953" height="438" alt="Screenshot 2026-07-06 141802" src="https://github.com/user-attachments/assets/060ceaa0-5ac8-4e48-b7b0-3f1cfa37d831" />
-<img width="936" height="441" alt="Screenshot 2026-07-06 141818" src="https://github.com/user-attachments/assets/1bbe7008-6303-4cb6-9311-05ce2df0d485" />
+Add your AI-generated stock analysis screenshot here.
 
+## ⭐ Watchlist & Portfolio
 
+Add your Watchlist and Portfolio screenshot here.
 
-## Watchlist & Portfolio
-<img width="955" height="429" alt="Screenshot 2026-07-06 134402" src="https://github.com/user-attachments/assets/6e4c9c7d-b883-4374-a336-f09e9263959a" />
+## 🔔 Price Alerts
 
-<img width="947" height="430" alt="Screenshot 2026-07-06 134437" src="https://github.com/user-attachments/assets/f4f8af39-3eb1-4ead-abf7-7129fabeb8e2" />
+Add your Price Alerts screenshot here.
 
+---
 
+# ☁️ Deployment
+
+## Frontend
+
+The frontend is deployed using Vercel.
+
+```text
+https://whystock-5e07jffal-akdha.vercel.app/
+```
+
+## Backend
+
+The FastAPI backend is deployed using Render.
+
+```text
+https://whystock-ai.onrender.com/
+```
+
+## Database
+
+PostgreSQL is used for persistent storage of:
+
+- Users
+- Watchlists
+- Portfolio holdings
+- Price alerts
+
+---
 
 # 📈 Future Improvements
 
@@ -278,22 +487,71 @@ http://127.0.0.1:5500
 - 📊 Advanced Portfolio Analytics
 - 🤖 Multi-LLM Support
 - 📈 Advanced Technical Indicator Analysis
-- 🔔 Smart AI-Based Price Alerts
 - 📰 Improved Financial News & Sentiment Analysis
-- 📱 Mobile-Responsive / Progressive Web App
+- 📱 Progressive Web App (PWA)
 - ⚡ Performance Optimization & Caching
 - 📈 Backtesting and Strategy Evaluation
+
+---
+
+# 🧪 Testing
+
+The application can be tested locally using:
+
+### Backend API
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### Frontend
+
+```text
+http://127.0.0.1:5500
+```
+
+Test the following:
+
+- User registration
+- User login
+- JWT authentication
+- Stock analysis
+- Watchlist creation/removal
+- Portfolio creation/removal
+- Price alert creation/removal
+- User-specific data isolation
+
+---
+
+# 🔒 Security
+
+WhyStock AI follows several security practices:
+
+- Passwords are hashed using Argon2.
+- JWT tokens are used for authenticated API requests.
+- User-specific resources are protected using authenticated user IDs.
+- API keys are stored in environment variables.
+- Database credentials are not hardcoded.
+- `.env` should never be committed to GitHub.
+
 ---
 
 # 👩‍💻 Author
 
-**Akshitha Bandi**
+## Akshitha Bandi
 
 GitHub:
+
 https://github.com/AkshithaBandi
 
-LinkedIn:
-https://www.linkedin.com/in/akshitha-dhakshayani-57b0892bb
 ---
 
-⭐ If you found this project useful, consider giving it a star.
+# ⭐ Support
+
+If you found **WhyStock AI** useful, consider giving the repository a ⭐ on GitHub.
+
+---
+
+## ⚠️ Disclaimer
+
+WhyStock AI is an educational and informational project.
